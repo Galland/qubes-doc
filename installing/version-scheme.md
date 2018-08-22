@@ -17,7 +17,7 @@ From now on, it will be as follows.
 Qubes distributions and products
 --------------------------------
 
-We intend to make it easy to make a remix of qubes, targeting another
+We intend to make it easy to make a remix of Qubes, targeting another
 hypervisor or isolation provider. We may also create commercial products
 intended for specific circumstances. There is one distinguished distribution
 called **Qubes OS**. All source code for it is available for download under GPL
@@ -28,13 +28,13 @@ Release version
 ---------------
 
 Qubes OS as a whole is released from time to time. Version scheme for all
-releases is modeled after Linux kernel version numbers. When announcing new
+releases is modeled after Linux kernel version numbers. When announcing a new
 release, we decide on the major.minor version (like `3.0`) and release
 `3.0-rc1`. When we feel that enough progress has been made, we put `3.0-rc2`
 and so on. All these versions are considered unstable and not ready for
 production. You may ask for support on mailing lists (specifically
 **qubes-devel**), but it is not guaranteed (you may for example get answer
-„update to newer `-rc`”). Public ISO image may or may not be available.
+“update to newer `-rc`”). Public ISO image may or may not be available.
 
 When enough development has been made, we announce the first stable version,
 like e.g. `3.0.0` (i.e. without `-rc`). This version is considered stable and
@@ -46,7 +46,7 @@ bugfixes as `3.0.1`, `3.0.2` and so on, while new features come into the next
 release e.g. `3.1-rcX`.
 
 Tickets in the tracker are sorted out by release major.minor, such as `3.0`,
-`3.1` (trac calls this „milestone”).
+`3.1` (trac calls this “milestone”).
 
 Release schedule
 ----------------
@@ -149,3 +149,9 @@ of repository.
 All version and release tags should be made and signed by someone from ITL
 staff. Public keys are included in `qubes-builder` and available at
 [https://keys.qubes-os.org/keys/](https://keys.qubes-os.org/keys/).
+
+Check installed version
+-----------------
+
+If you want to know which version you are running, for example to report
+an issue, you can either check in the Qubes Manager menu under About / Qubes OS  or in the file /etc/qubes-release in dom0. For the latter you can use a command like `cat /etc/qubes-release` in a dom0 terminal.

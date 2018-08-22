@@ -14,11 +14,10 @@ redirect_from:
 - /wiki/UserDoc/OpenPGP/
 ---
 
-Qubes Split GPG
-===============
+# Qubes Split GPG #
 
-What is Split GPG and why should I use it instead of the standard GPG?
-----------------------------------------------------------------------
+## What is Split GPG and why should I use it instead of the standard GPG? ##
+
 Split GPG implements a concept similar to having a smart card with your
 private GPG keys, except that the role of the "smart card" plays another Qubes
 AppVM. This way one, not-so-trusted domain, e.g. the one where Thunderbird is
@@ -76,21 +75,20 @@ could start a Disposable VM and have the to-be-signed document displayed
 there? To Be Determined.
 
 
-Configuring and using Split GPG
--------------------------------
+## Configuring Split GPG ##
 
 In dom0, make sure the `qubes-gpg-split-dom0` package is installed.
 
-    sudo qubes-dom0-update qubes-gpg-split-dom0
+    [user@dom0 ~]$ sudo qubes-dom0-update qubes-gpg-split-dom0
     
-If using templates based on Debian, make sure you have the `qubes-gpg-split`
+If using templates based on Debian or Whonix, make sure you have the `qubes-gpg-split`
 package installed.
 
-    sudo apt-get install qubes-gpg-split
+    [user@debian-8 ~]$ sudo apt install qubes-gpg-split
     
 For Fedora.
 
-    sudo yum install qubes-gpg-split
+    [user@fedora-25 ~]$ sudo dnf install qubes-gpg-split
 
 Start with creating a dedicated AppVM for storing your keys (the GPG backend
 domain). It is recommended that this domain be network disconnected (set its
@@ -146,7 +144,9 @@ only `gpg2`). If you encounter trouble while trying to set up Split-GPG, make
 sure you're using `gpg2` for your configuration and testing, since keyring data
 may differ between the two installations.
 
-### Configuring Thunderbird/Enigmail for use with Split GPG ###
+## Qubes 3.2 Specifics ##
+
+### Using Thunderbird + Enigmail with Split GPG ###
 
 However, when using Thunderbird with Enigmail extension it is
 not enough, because Thunderbird doesn't preserve the environment
@@ -161,7 +161,7 @@ the content of the file `/rw/config/gpg-split-domain`, which should be set to
 the name of the GPG backend VM. This file survives the AppVM reboot, of course.
 
     [user@work ~]$ sudo bash
-    [user@work ~]$ echo "work-gpg" > /rw/config/gpg-split-domain
+    [root@work ~]$ echo "work-gpg" > /rw/config/gpg-split-domain
 
 A note on passphrases:
 
@@ -171,7 +171,65 @@ passphrase from your (sub)key(s) in order to get Split-GPG working correctly.
 As mentioned above, we do not believe PGP key passphrases to be significant
 from a security perspective.
 
-### Importing public keys ###
+## Qubes 4.0 Specifics ##
+
+### Using Thunderbird + Enigmail with Split GPG ###
+
+New qrexec policies in Qubes R4.0 by default require the user to enter the name 
+of the domain containing GPG keys each time it is accessed.  To improve usability 
+for Thunderbird+Enigmail, in `dom0` place the following line at the top of the file 
+`/etc/qubes-rpc/policy/qubes.Gpg`:
+
+```
+work-email  work-gpg  allow
+```
+where `work-email` is the Thunderbird+Enigmail AppVM and `work-gpg` contains 
+your GPG keys.
+
+## Using Git with Split GPG ##
+
+Git can be configured to used with Split-GPG, something useful if you would
+like to contribute to the Qubes OS  Project as every commit is required to be
+signed. The most basic `~/.gitconfig` file to with working Split-GPG looks
+something like this.
+
+    [user]
+    name = YOUR NAME
+    email = YOUR EMAIL ADDRESS
+    signingkey = YOUR KEY ID
+
+    [gpg]
+    program = qubes-gpg-client-wrapper
+
+Your key id is the public id of your signing key, which can be found by running
+`qubes-gpg-client -k`. In this instance, the key id is DD160C74.
+
+    [user@work ~]$ qubes-gpg-client -k
+    /home/user/.gnupg/pubring.kbx
+    -----------------------------   
+    pub   rsa4096/DD160C74 2016-04-26
+    uid                    Qubes User
+
+To sign commits, you now add the "-S" flag to your commit command, which should
+prompt for Split-GPG usage. If you would like automatically sign all commits,
+you can add the following snippet to `~/.gitconfig`.
+
+    [commit]
+    gpgsign = true
+
+Lastly, if you would like to add aliases to sign and verify tags using the
+conventions the Qubes OS Project recommends, you can add the following snippet
+to `~/.gitconfig`.
+
+    [alias]
+    stag = "!id=`git rev-parse --verify HEAD`; git tag -s user_${id:0:8} -m \"Tag for commit $id\""
+    vtag = !git tag -v `git describe`
+
+Replace `user` with your short, unique nickname. Now you can use `git stag` to
+add a signed tag to a commit and `git vtag` to verify the most recent tag that
+is reachable from a commit.
+
+## Importing public keys ###
 
 Use `qubes-gpg-import-key` in the client AppVM to import the key into the
 GPG backend VM. Of course a (safe, unspoofable) user consent dialog box is
@@ -184,8 +242,9 @@ displayed to accept this.
 
 <br />
 
-Advanced: Using Split GPG with Subkeys
---------------------------------------
+
+## Advanced: Using Split GPG with Subkeys ##
+
 Users with particularly high security requirements may wish to use Split
 GPG with [​subkeys]. However, this setup
 comes at a significant cost: It will be impossible to sign other people's keys
@@ -215,10 +274,11 @@ In this example, the following keys are stored in the following locations
    leave the `vault` VM, so it is extremely unlikely ever to be obtained by
    an adversary (see below). Second, an adversary who *does* manage to obtain
    the master secret key either possesses the passphrase to unlock the key
-   (if one is used), or he does not. If he does, then he can simply use
-   the passphrase in order to legally extend the expiration date of the key
-   (or remove it entirely). If he does not, then he cannot use the key at
-   all. In either case, an expiration date provides no additional benefit.
+   (if one is used) or does not. An adversary who *does* possess the passphrase
+   can simply use it to legally extend the expiration date of the key
+   (or remove it entirely). An adversary who does *not* possess the passphrase
+   cannot use the key at all. In either case, an expiration date provides no
+   additional benefit.
 
    By the same token, however, having a passphrase on the key is of little
    value. An adversary who is capable of stealing the key from your `vault`
@@ -334,11 +394,11 @@ exercise caution and use your good judgment.)
 [#474]: https://github.com/QubesOS/qubes-issues/issues/474
 [using split GPG with subkeys]: #advanced-using-split-gpg-with-subkeys
 [​subkeys]: https://wiki.debian.org/Subkeys
-[copied]: /doc/copying-files#on-inter-domain-file-copy-security
+[copied]: /doc/copying-files#on-inter-qube-file-copy-security
 [pasted]: /doc/copy-paste#on-copypaste-security
 [​MUA]: https://en.wikipedia.org/wiki/Mail_user_agent
 [covert channels]: /doc/data-leaks
-[trusting-templates]: /doc/SoftwareUpdateVM#notes-on-trusting-your-template-vms
+[trusting-templates]: /doc/software-update-vm/#notes-on-trusting-your-templatevms
 [openpgp-in-qubes-os]: https://groups.google.com/d/topic/qubes-users/Kwfuern-R2U/discussion
 [cabal]: https://alexcabal.com/creating-the-perfect-gpg-keypair/
 [luck]: https://gist.github.com/abeluck/3383449

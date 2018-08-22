@@ -14,7 +14,7 @@ Updating software in dom0
 Why would one want to update software in dom0?
 ----------------------------------------------
 
-Normally, there should be few reasons for updating software in dom0. This is because there is no networking in dom0, which means that even if some bugs are discovered e.g. in the dom0 Desktop Manager, this really is not a problem for Qubes, because none of the 3rd party software running in dom0 is accessible from VMs or the network in any way. Some exceptions to this include: Qubes GUI daemon, Xen store daemon, and disk back-ends. (We plan move the disk backends to an untrusted domain in Qubes 2.0.) Of course, we believe this software is reasonably secure, and we hope it will not need patching.
+Normally, there should be few reasons for updating software in dom0. This is because there is no networking in dom0, which means that even if some bugs are discovered e.g. in the dom0 Desktop Manager, this really is not a problem for Qubes, because none of the third-party software running in dom0 is accessible from VMs or the network in any way. Some exceptions to this include: Qubes GUI daemon, Xen store daemon, and disk back-ends. (We plan move the disk backends to an untrusted domain in a future Qubes release.) Of course, we believe this software is reasonably secure, and we hope it will not need patching.
 
 However, we anticipate some other situations in which updating dom0 software might be necessary or desirable:
 
@@ -52,43 +52,107 @@ Of course, command line tools are still available for accomplishing various upda
 
 ### How to downgrade a specific package
 
+**WARNING:** Downgrading a package can expose your system to security vulnerabilities.
+
 1.  Download an older version of the package:
 
     ~~~
     sudo qubes-dom0-update package-version
     ~~~
 
-    Yum will say that there is no update, but the package will nonetheless be downloaded to dom0.
+    Dnf will say that there is no update, but the package will nonetheless be downloaded to dom0.
 
-1.  Downgrade the packge:
+2.  Downgrade the package:
 
     ~~~
-    sudo yum downgrade package-version
+    sudo dnf downgrade package-version
     ~~~
+
+For example, to downgrade Xen to a specific older version available for Qubes R3.2, you would:
+
+~~~
+sudo qubes-dom0-update xen-libs-4.6.6-36.fc23.x86_64 xen-hypervisor-4.6.6-36.fc23.x86_64 xen-runtime-4.6.6-36.fc23.x86_64 xen-hvm-4.6.6-36.fc23.x86_64 xen-4.6.6-36.fc23.x86_64 xen-license-4.6.6-36.fc23.x86_64
+
+sudo dnf downgrade xen-libs-4.6.6-36.fc23.x86_64 xen-hypervisor-4.6.6-36.fc23.x86_64 xen-runtime-4.6.6-36.fc23.x86_64 xen-hvm-4.6.6-36.fc23.x86_64 xen-4.6.6-36.fc23.x86_64 xen-license-4.6.6-36.fc23.x86_64
+~~~
+
+### How to re-install a package
+
+You can re-install in a similar fashion to downgrading.
+
+1.  Download the package:
+
+    ~~~
+    sudo qubes-dom0-update package
+    ~~~
+
+    Dnf will say that there is no update, but the package will nonetheless be downloaded to dom0.
+
+2.  Re-install the package:
+
+    ~~~
+    sudo dnf reinstall package
+    ~~~
+
+    Note that Dnf will only re-install if the installed and downloaded versions match. You can ensure they match by either updating the package to the latest version, or specifying the package version in the first step using the form `package-version`.
 
 ### How to uninstall a package
 
 If you've installed a package such as anti-evil-maid, you can remove it with the following command:
 
-    ~~~
-    sudo yum remove anti-evil-maid
-    ~~~
+    sudo dnf remove anti-evil-maid
     
+### Testing repositories
+
+There are three Qubes dom0 testing repositories:
+
+* `qubes-dom0-current-testing` -- testing packages that will eventually land in the stable
+  (`current`) repository
+* `qubes-dom0-security-testing` -- a subset of `qubes-dom0-current-testing` that contains packages
+  that qualify as security fixes
+* `qubes-dom0-unstable` -- packages that are not intended to land in the stable (`qubes-dom0-current`)
+  repository; mostly experimental debugging packages
+
+To temporarily enable any of these repos, use the `--enablerepo=<repo-name>`
+option. Example commands:
+
+~~~
+sudo qubes-dom0-update --enablerepo=qubes-dom0-current-testing
+sudo qubes-dom0-update --enablerepo=qubes-dom0-security-testing
+sudo qubes-dom0-update --enablerepo=qubes-dom0-unstable
+~~~
+
+To enable or disable any of these repos permanently, change the corresponding boolean in
+`/etc/yum.repos.d/qubes-dom0.repo`.
+
 ### Kernel Upgrade ###
 
-Install newer kernel. The following example installs kernel 3.19 and was tested on Qubes R3 RC1.
+Install newer kernel for dom0 and VMs. The package `kernel` is for dom0 and the package `kernel-qubes-vm`
+is needed for the VMs. (Note that the following example enables the unstable repo.)
 
 ~~~
-sudo qubes-dom0-update kernel-3.19*
+sudo qubes-dom0-update --enablerepo=qubes-dom0-unstable kernel kernel-qubes-vm
 ~~~
 
-Rebuild grub config.
+If the update process does not automatically do it (you should see it mentioned in the CLI output
+from the update command), you may need to manually rebuild the EFI or grub config depending on which
+your system uses.
 
+EFI: Replace the example version numbers with the one you are upgrading to.
+~~~
+sudo dracut -f /boot/efi/EFI/qubes/initramfs-4.14.35-1.pvops.qubes.x86_64.img 4.14.35-1.pvops.qubes.x86_64
+~~~
+
+Grub2
 ~~~
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 ~~~
 
 Reboot required.
+
+If you wish to upgrade to a kernel that is not available from the repos, then
+there is no easy way to do so, but [it may still be possible if you're willing
+to do a lot of work yourself](https://groups.google.com/d/msg/qubes-users/m8sWoyV58_E/HYdReRIYBAAJ).
 
 ### Upgrading over Tor ###
 
